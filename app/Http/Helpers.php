@@ -7,18 +7,21 @@ use App\Models\Order;
 use App\Models\Wishlist;
 use App\Models\Shipping;
 use App\Models\Cart;
+use Illuminate\Database\Eloquent\Model;
+
+
 // use Auth;
 class Helper{
     public static function messageList()
     {
         return Message::whereNull('read_at')->orderBy('created_at', 'desc')->get();
-    } 
+    }
     public static function getAllCategory(){
         $category=new Category();
         $menu=$category->getAllParentWithChild();
         return $menu;
-    } 
-    
+    }
+
     public static function getHeaderCategory(){
         $category = new Category();
         // dd($category);
@@ -26,7 +29,7 @@ class Helper{
 
         if($menu){
             ?>
-            
+
             <li>
             <a href="javascript:void(0);">Danh Mục<i class="ti-angle-down"></i></a>
                 <ul class="dropdown border-0 shadow">
@@ -67,22 +70,9 @@ class Helper{
         return Category::has('products')->orderBy('id','DESC')->get();
     }
 
-    public static function postTagList($option='all'){
-        if($option='all'){
-            return PostTag::orderBy('id','desc')->get();
-        }
-        return PostTag::has('posts')->orderBy('id','desc')->get();
-    }
-
-    public static function postCategoryList($option="all"){
-        if($option='all'){
-            return PostCategory::orderBy('id','DESC')->get();
-        }
-        return PostCategory::has('posts')->orderBy('id','DESC')->get();
-    }
     // Cart Count
     public static function cartCount($user_id=''){
-       
+
         if(Auth::check()){
             if($user_id=="") $user_id=auth()->user()->id;
             return Cart::where('user_id',$user_id)->where('order_id',null)->sum('quantity');
@@ -91,20 +81,18 @@ class Helper{
             return 0;
         }
     }
-    // relationship cart with product
-    public function product(){
-        return $this->hasOne('App\Models\Product','id','product_id');
+
+
+    public static function getAllProductFromCart($user_id = '')
+    {
+        if (Auth::check()) {
+            if ($user_id == "") $user_id = auth()->user()->id;
+            return Cart::with('product')->where('user_id', $user_id)->where('order_id', null)->get();
+        } else {
+            return collect([]); // Trả về collection rỗng thay vì 0
+        }
     }
 
-    public static function getAllProductFromCart($user_id=''){
-        if(Auth::check()){
-            if($user_id=="") $user_id=auth()->user()->id;
-            return Cart::with('product')->where('user_id',$user_id)->where('order_id',null)->get();
-        }
-        else{
-            return 0;
-        }
-    }
     // Total amount cart
     public static function totalCartPrice($user_id = '') {
         if (Auth::check()) {
@@ -120,10 +108,10 @@ class Helper{
             return 0;
         }
     }
-    
+
     // Wishlist Count
     public static function wishlistCount($user_id=''){
-       
+
         if(Auth::check()){
             if($user_id=="") $user_id=auth()->user()->id;
             return Wishlist::where('user_id',$user_id)->where('cart_id',null)->sum('quantity');

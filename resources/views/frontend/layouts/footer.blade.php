@@ -152,3 +152,12 @@
 			});
 		});
 	  </script>
+
+<style>
+    .footer img {
+        max-width: 200px; /* Điều chỉnh kích thước ảnh */
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+</style>

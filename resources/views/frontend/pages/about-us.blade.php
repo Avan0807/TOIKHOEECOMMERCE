@@ -33,7 +33,7 @@
 							<h3>Chào mừng đến với <span>CODY</span></h3>
 							<p>@foreach($settings as $data) {{$data->description}} @endforeach</p>
 							<div class="button">
-								<a href="{{route('blog')}}" class="btn">Bài viết của chúng tôi</a>
+								<a href="" class="btn">Bài viết của chúng tôi</a>
 								<a href="{{route('contact')}}" class="btn primary">Liên hệ với chúng tôi</a>
 							</div>
 						</div>
@@ -94,7 +94,7 @@
             </div>
         </div>
     </div>
-	</section>	
+	</section>
 	<!-- End Shop Services Area -->
 
 	@include('frontend.layouts.newsletter')

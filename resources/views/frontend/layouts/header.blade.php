@@ -131,7 +131,7 @@
                                             <span>Tổng cộng</span>
                                             <span class="total-amount">{{number_format(Helper::totalWishlistPrice(),0,',','.')}}đ</span>
                                         </div>
-                                        <a href="{{route('cart')}}" class="btn animate">Giỏ Hàng</a>
+                                        <a href="{{route('wishlist')}}" class="btn animate">Yêu Thích</a>
                                     </div>
                                 </div>
                             @endauth
@@ -144,13 +144,14 @@
                             <div class="shopping-item">
                                 <div class="dropdown-cart-header">
                                     @php
-                                        $cartItems = Helper::getAllProductFromCart() ?? []; 
-                                        $totalProducts = is_array($cartItems) ? count($cartItems) : 0;
+                                        $cartItems = Helper::getAllProductFromCart() ?? collect([]);
+                                        $totalProducts = $cartItems->count(); // Collection có thể dùng count() trực tiếp
                                     @endphp
+
                                     <span>{{ $totalProducts }} Sản Phẩm</span>
                                     <a href="{{ route('cart') }}">Xem Giỏ Hàng</a>
                                 </div>
-                                
+
                                 <ul class="shopping-list">
                                     @foreach($cartItems as $data)
                                         @php
@@ -169,7 +170,7 @@
                                         </li>
                                     @endforeach
                                 </ul>
-                                
+
                                 <div class="bottom">
                                     <div class="total">
                                         <span>Tổng cộng</span>
@@ -219,4 +220,19 @@
     </div>
     <!--/ End Header Inner -->
 </header>
+
+<style>
+    .header .logo img {
+        max-width: 120px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .header .logo img {
+            max-width: 100px;
+        }
+    }
+</style>
 

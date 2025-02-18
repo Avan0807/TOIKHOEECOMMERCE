@@ -61,28 +61,28 @@ class OrderController extends Controller
              'email'      => 'string|required',
              'doctor_id'  => 'nullable|exists:doctors,id' // ✅ Đảm bảo doctor_id hợp lệ nếu có
          ]);
-     
+
          // ✅ Kiểm tra giỏ hàng
          if (Cart::where('user_id', auth()->id())->whereNull('order_id')->doesntExist()) {
              request()->session()->flash('error', 'Giỏ hàng đang trống!');
              return redirect()->back();
          }
-     
+
          // ✅ Lấy toàn bộ dữ liệu từ request
          $order_data = $request->all();
-     
+
          // ✅ Nếu không có doctor_id, loại bỏ nó khỏi dữ liệu insert
          if (!$request->filled('doctor_id')) {
              unset($order_data['doctor_id']);
          }
-     
+
          // ✅ Tạo order
          $order_data['order_number'] = 'ORD-' . strtoupper(Str::random(10));
          $order_data['user_id'] = auth()->id();
          $order_data['shipping_id'] = $request->shipping;
          $order_data['sub_total'] = Helper::totalCartPrice();
          $order_data['quantity'] = Helper::cartCount();
-     
+
          // ✅ Tính toán total_amount (bao gồm phí vận chuyển nếu có)
          if ($request->shipping) {
              $shipping = Shipping::find($request->shipping);
@@ -90,41 +90,38 @@ class OrderController extends Controller
          } else {
              $order_data['total_amount'] = Helper::totalCartPrice();
          }
-     
+
          // ✅ Áp dụng coupon nếu có
          if (session('coupon')) {
              $order_data['coupon'] = session('coupon')['value'];
              $order_data['total_amount'] -= session('coupon')['value'];
          }
-     
+
          // ✅ Xử lý thanh toán
          $order_data['payment_method'] = $request->payment_method ?? 'cod';
          $order_data['payment_status'] = in_array($request->payment_method, ['paypal', 'cardpay']) ? 'paid' : 'Unpaid';
-     
-         // ✅ Kiểm tra dữ liệu order_data trước khi insert
-         Log::info('Dữ liệu order_data trước khi insert:', $order_data);
-     
+
+
          // ✅ Kiểm tra Query Log trước khi insert
          DB::enableQueryLog();
          $order = Order::create($order_data);
-         Log::info('Query Log:', DB::getQueryLog());
-     
+
          // ✅ Kiểm tra lỗi insert
          if (!$order) {
              Log::error('Lỗi khi insert đơn hàng!', $order_data);
              request()->session()->flash('error', 'Có lỗi xảy ra khi tạo đơn hàng.');
              return redirect()->back();
          }
-     
+
          // ✅ Lấy doctor_id từ session (nếu có)
          $doctor_id = session('doctor_id');
-     
+
          // ✅ Nếu có doctor_id, lưu nó vào đơn hàng và tính hoa hồng
          if ($doctor_id) {
              $order->doctor_id = $doctor_id;
              $order->commission = $order->sub_total * 0.10; // 10% hoa hồng cho bác sĩ
              $order->save();
-     
+
              // ✅ Lưu thông tin vào affiliate_orders
              AffiliateOrder::create([
                  'order_id' => $order->id,
@@ -138,27 +135,27 @@ class OrderController extends Controller
              $order->commission = 0;
              $order->save();
          }
-     
+
          // ✅ Gửi thông báo khi tạo đơn hàng thành công
          Notification::send(User::where('role', 'admin')->first(), new StatusNotification([
              'title' => 'Đơn hàng mới',
              'actionURL' => route('order.show', $order->id),
              'fas' => 'fa-file-alt'
          ]));
-     
+
          // ✅ Xóa session giỏ hàng
          session()->forget(['cart', 'coupon']);
-     
+
          // ✅ Cập nhật giỏ hàng với order_id
          Cart::where('user_id', auth()->id())->whereNull('order_id')->update(['order_id' => $order->id]);
-     
+
          // ✅ Thông báo thành công và chuyển hướng
          request()->session()->flash('success', 'Đơn hàng của bạn đã được tạo. Cảm ơn bạn đã mua sắm!');
          return redirect()->route('home');
      }
-     
-     
-     
+
+
+
     /**
      * Hiển thị chi tiết đơn hàng (phía admin).
      */

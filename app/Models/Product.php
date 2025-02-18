@@ -16,7 +16,10 @@ class Product extends Model
         'is_featured' => 'boolean',
         'stock' => 'integer',
     ];
-
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1); // Giả sử cột 'status' là trạng thái hoạt động
+    }
     public function cat_info(){
         return $this->hasOne(Category::class, 'id', 'cat_id');
     }

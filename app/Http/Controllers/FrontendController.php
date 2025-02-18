@@ -5,28 +5,60 @@ use App\Models\Banner;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Brand;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class FrontendController extends Controller
 {
     public function index(Request $request){
         return redirect()->route($request->user()->role);
     }
+
+
     public function home(){
-        $featured = Product::where('status', 'active')->where('is_featured', 1)->orderBy('price', 'DESC')->limit(2)->get();
-        $banners = Banner::where('status', 'active')->limit(3)->orderBy('id', 'DESC')->get();
-        $products = Product::where('status', 'active')->orderBy('id', 'DESC')->limit(8)->get();
-        $category = Category::where('status', 'active')->where('is_parent', 1)->orderBy('title', 'ASC')->get();
-        
-        return view('frontend.index')
-            ->with('featured', $featured)
-            ->with('banners', $banners)
-            ->with('product_lists', $products)
-            ->with('category_lists', $category);
+        // Cache danh mục trong 60 phút
+        $category = Cache::remember('categories_parent', 60, function () {
+            return Category::where('status', 'active')->where('is_parent', 1)->orderBy('title', 'ASC')->get();
+        });
+
+        // Cache sản phẩm nổi bật trong 30 phút
+        $featured = Cache::remember('featured_products', 30, function () {
+            return Product::where('status', 'active')
+                ->where('is_featured', 1)
+                ->orderBy('price', 'DESC')
+                ->limit(2)
+                ->get();
+        });
+
+        // Cache sản phẩm mới nhất trong 30 phút
+        $products = Cache::remember('latest_products', 30, function () {
+            return Product::where('status', 'active')
+                ->orderBy('id', 'DESC')
+                ->limit(8)
+                ->get();
+        });
+
+        // Cache banner trong 30 phút
+        $banners = Cache::remember('active_banners', 30, function () {
+            return Banner::where('status', 'active')
+                ->orderBy('id', 'DESC')
+                ->limit(3)
+                ->get();
+        });
+
+        return view('frontend.index', [
+            'featured' => $featured,
+            'banners' => $banners,
+            'product_lists' => $products, // Đổi tên biến này
+            'category_lists' => $category
+        ]);
+
     }
+
 
     public function aboutUs(){
         return view('frontend.pages.about-us');
@@ -44,165 +76,212 @@ class FrontendController extends Controller
         return view('frontend.pages.product_detail')->with('product_detail', $product_detail);
     }
 
-    public function productGrids(){
+    public function productGrids()
+    {
+        $request = request(); // Sử dụng request() để dễ đọc hơn
         $products = Product::query();
 
-        if (!empty($_GET['category'])) {
-            $slug = explode(',', $_GET['category']);
-            $cat_ids = Category::select('id')->whereIn('slug', $slug)->pluck('id')->toArray();
-            $products->whereIn('cat_id', $cat_ids);
+        // Lọc theo danh mục (category)
+        if ($request->has('category')) {
+            $slug = explode(',', $request->category);
+            $cat_ids = Category::whereIn('slug', $slug)->pluck('id');
+            if ($cat_ids->isNotEmpty()) {
+                $products->whereIn('cat_id', $cat_ids);
+            }
         }
 
-        if (!empty($_GET['brand'])) {
-            $slugs = explode(',', $_GET['brand']);
-            $brand_ids = Brand::select('id')->whereIn('slug', $slugs)->pluck('id')->toArray();
-            $products->whereIn('brand_id', $brand_ids);
+        // Lọc theo thương hiệu (brand)
+        if ($request->has('brand')) {
+            $slugs = explode(',', $request->brand);
+            $brand_ids = Brand::whereIn('slug', $slugs)->pluck('id');
+            if ($brand_ids->isNotEmpty()) {
+                $products->whereIn('brand_id', $brand_ids);
+            }
         }
 
-        if (!empty($_GET['sortBy'])) {
-            $products = $products->where('status', 'active')->orderBy($_GET['sortBy'], 'ASC');
+        // Sắp xếp sản phẩm
+        if ($request->has('sortBy')) {
+            $products->orderBy($request->sortBy, 'ASC');
         }
 
-        if (!empty($_GET['price'])) {
-            $price = explode('-', $_GET['price']);
-            $products->whereBetween('price', $price);
+        // Lọc theo giá
+        if ($request->has('price')) {
+            $price = explode('-', $request->price);
+            if (count($price) == 2) {
+                $products->whereBetween('price', [$price[0], $price[1]]);
+            }
         }
 
-        $recent_products = Product::where('status', 'active')->orderBy('id', 'DESC')->limit(3)->get();
-        
-        $products = $products->where('status', 'active')->paginate($_GET['show'] ?? 9);
-        
-        return view('frontend.pages.product-grids')->with('products', $products)->with('recent_products', $recent_products);
+        // Lấy sản phẩm mới nhất (cache để giảm tải)
+        $recent_products = Cache::remember('recent_products', 30, function () {
+            return Product::active()->latest()->limit(3)->get();
+        });
+
+        // Phân trang sản phẩm
+        $products = $products->active()->paginate($request->input('show', 9));
+
+        return view('frontend.pages.product-grids', compact('products', 'recent_products'));
     }
-    public function productLists(){
+
+    public function productLists()
+    {
+        $request = request(); // Sử dụng request() thay vì $_GET
         $products = Product::query();
 
-        if (!empty($_GET['category'])) {
-            $slug = explode(',', $_GET['category']);
-            $cat_ids = Category::select('id')->whereIn('slug', $slug)->pluck('id')->toArray();
-            $products->whereIn('cat_id', $cat_ids);
+        // Lọc theo danh mục (category)
+        if ($request->has('category')) {
+            $slug = explode(',', $request->category);
+            $cat_ids = Category::whereIn('slug', $slug)->pluck('id');
+            if ($cat_ids->isNotEmpty()) {
+                $products->whereIn('cat_id', $cat_ids);
+            }
         }
 
-        if (!empty($_GET['brand'])) {
-            $slugs = explode(',', $_GET['brand']);
-            $brand_ids = Brand::select('id')->whereIn('slug', $slugs)->pluck('id')->toArray();
-            $products->whereIn('brand_id', $brand_ids);
+        // Lọc theo thương hiệu (brand)
+        if ($request->has('brand')) {
+            $slugs = explode(',', $request->brand);
+            $brand_ids = Brand::whereIn('slug', $slugs)->pluck('id');
+            if ($brand_ids->isNotEmpty()) {
+                $products->whereIn('brand_id', $brand_ids);
+            }
         }
 
-        if (!empty($_GET['sortBy'])) {
-            $products = $products->where('status', 'active')->orderBy($_GET['sortBy'], 'ASC');
+        // Sắp xếp sản phẩm
+        if ($request->has('sortBy')) {
+            $products->orderBy($request->sortBy, 'ASC');
         }
 
-        if (!empty($_GET['price'])) {
-            $price = explode('-', $_GET['price']);
-            $products->whereBetween('price', $price);
+        // Lọc theo giá
+        if ($request->has('price')) {
+            $price = explode('-', $request->price);
+            if (count($price) == 2) {
+                $products->whereBetween('price', [$price[0], $price[1]]);
+            }
         }
 
-        $recent_products = Product::where('status', 'active')->orderBy('id', 'DESC')->limit(3)->get();
-        
-        $products = $products->where('status', 'active')->paginate($_GET['show'] ?? 6);
-        
-        return view('frontend.pages.product-lists')->with('products', $products)->with('recent_products', $recent_products);
-    }
-    public function productFilter(Request $request){
-            $data= $request->all();
-            // return $data;
-            $showURL="";
-            if(!empty($data['show'])){
-                $showURL .='&show='.$data['show'];
-            }
+        // Lấy sản phẩm mới nhất (cache để giảm tải)
+        $recent_products = Cache::remember('recent_products', 30, function () {
+            return Product::active()->latest()->limit(3)->get();
+        });
 
-            $sortByURL='';
-            if(!empty($data['sortBy'])){
-                $sortByURL .='&sortBy='.$data['sortBy'];
-            }
+        // Phân trang sản phẩm
+        $products = $products->active()->paginate($request->input('show', 6));
 
-            $catURL="";
-            if(!empty($data['category'])){
-                foreach($data['category'] as $category){
-                    if(empty($catURL)){
-                        $catURL .='&category='.$category;
-                    }
-                    else{
-                        $catURL .=','.$category;
-                    }
-                }
-            }
-
-            $brandURL="";
-            if(!empty($data['brand'])){
-                foreach($data['brand'] as $brand){
-                    if(empty($brandURL)){
-                        $brandURL .='&brand='.$brand;
-                    }
-                    else{
-                        $brandURL .=','.$brand;
-                    }
-                }
-            }
-            // return $brandURL;
-
-            $priceRangeURL="";
-            if(!empty($data['price_range'])){
-                $priceRangeURL .='&price='.$data['price_range'];
-            }
-            if(request()->is('e-shop.loc/product-grids')){
-                return redirect()->route('product-grids',$catURL.$brandURL.$priceRangeURL.$showURL.$sortByURL);
-            }
-            else{
-                return redirect()->route('product-lists',$catURL.$brandURL.$priceRangeURL.$showURL.$sortByURL);
-            }
-    }
-    public function productSearch(Request $request){
-        $recent_products = Product::where('status', 'active')->orderBy('id', 'DESC')->limit(3)->get();
-        
-        $products = Product::where('title', 'like', '%'.$request->search.'%')
-                    ->orWhere('slug', 'like', '%'.$request->search.'%')
-                    ->orWhere('description', 'like', '%'.$request->search.'%')
-                    ->orWhere('summary', 'like', '%'.$request->search.'%')
-                    ->orWhere('price', 'like', '%'.$request->search.'%')
-                    ->orderBy('id', 'DESC')
-                    ->paginate(9);
-        
-        return view('frontend.pages.product-grids')->with('products', $products)->with('recent_products', $recent_products);
+        return view('frontend.pages.product-lists', compact('products', 'recent_products'));
     }
 
-    public function productBrand(Request $request){
-        $products=Brand::getProductByBrand($request->slug);
-        $recent_products=Product::where('status','active')->orderBy('id','DESC')->limit(3)->get();
-        if(request()->is('e-shop.loc/product-grids')){
-            return view('frontend.pages.product-grids')->with('products',$products->products)->with('recent_products',$recent_products);
-        }
-        else{
-            return view('frontend.pages.product-lists')->with('products',$products->products)->with('recent_products',$recent_products);
+    public function productFilter(Request $request)
+    {
+        $queryParams = [];
+
+        if ($request->has('show')) {
+            $queryParams['show'] = $request->input('show');
         }
 
+        if ($request->has('sortBy')) {
+            $queryParams['sortBy'] = $request->input('sortBy');
+        }
+
+        if ($request->has('category')) {
+            $queryParams['category'] = implode(',', $request->input('category'));
+        }
+
+        if ($request->has('brand')) {
+            $queryParams['brand'] = implode(',', $request->input('brand'));
+        }
+
+        if ($request->has('price_range')) {
+            $queryParams['price'] = $request->input('price_range');
+        }
+
+        // Xây dựng query string tự động
+        $queryString = http_build_query($queryParams);
+
+        // Điều hướng đến trang tương ứng
+        return request()->is('e-shop.loc/product-grids')
+            ? redirect()->route('product-grids', $queryString)
+            : redirect()->route('product-lists', $queryString);
     }
-    public function productCat(Request $request){
-        $products=Category::getProductByCat($request->slug);
-        // return $request->slug;
-        $recent_products=Product::where('status','active')->orderBy('id','DESC')->limit(3)->get();
 
-        if(request()->is('e-shop.loc/product-grids')){
-            return view('frontend.pages.product-grids')->with('products',$products->products)->with('recent_products',$recent_products);
-        }
-        else{
-            return view('frontend.pages.product-lists')->with('products',$products->products)->with('recent_products',$recent_products);
+    public function productSearch(Request $request)
+    {
+        $searchTerm = trim($request->input('search'));
+
+        // Lấy sản phẩm mới nhất (cache để giảm tải)
+        $recent_products = Cache::remember('recent_products', 30, function () {
+            return Product::active()->latest()->limit(3)->get();
+        });
+
+        // Kiểm tra xem có từ khóa tìm kiếm không, nếu không thì trả về danh sách trống
+        if (empty($searchTerm)) {
+            return view('frontend.pages.product-grids', compact('recent_products'))
+                   ->with('products', collect([]));
         }
 
+        // Tìm kiếm sản phẩm theo nhiều tiêu chí
+        $products = Product::active()
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('title', 'like', "%{$searchTerm}%")
+                      ->orWhere('slug', 'like', "%{$searchTerm}%")
+                      ->orWhere('description', 'like', "%{$searchTerm}%")
+                      ->orWhere('summary', 'like', "%{$searchTerm}%")
+                      ->orWhereRaw("CAST(price AS CHAR) LIKE ?", ["%{$searchTerm}%"]); // Tối ưu tìm kiếm số
+            })
+            ->orderBy('id', 'DESC')
+            ->paginate(9);
+
+        return view('frontend.pages.product-grids', compact('products', 'recent_products'));
     }
-    public function productSubCat(Request $request){
-        $products=Category::getProductBySubCat($request->sub_slug);
-        // return $products;
-        $recent_products=Product::where('status','active')->orderBy('id','DESC')->limit(3)->get();
 
-        if(request()->is('e-shop.loc/product-grids')){
-            return view('frontend.pages.product-grids')->with('products',$products->sub_products)->with('recent_products',$recent_products);
-        }
-        else{
-            return view('frontend.pages.product-lists')->with('products',$products->sub_products)->with('recent_products',$recent_products);
-        }
 
+    public function productBrand(Request $request)
+    {
+        $products = Brand::getProductByBrand($request->slug);
+        $recent_products = Cache::remember('recent_products', 30, function () {
+            return Product::active()->latest()->limit(3)->get();
+        });
+
+        // Kiểm tra nếu không có sản phẩm từ thương hiệu để tránh lỗi
+        $productList = $products ? $products->products : collect([]);
+
+        // Xác định trang cần điều hướng
+        $view = request()->routeIs('product-grids') ? 'frontend.pages.product-grids' : 'frontend.pages.product-lists';
+
+        return view($view, compact('productList', 'recent_products'));
+    }
+
+    public function productCat(Request $request)
+    {
+        $category = Category::getProductByCat($request->slug);
+
+        // Đảm bảo biến $products luôn là collection để tránh lỗi count()
+        $products = $category ? collect($category->products) : collect([]);
+
+        $recent_products = Cache::remember('recent_products', 30, function () {
+            return Product::active()->latest()->limit(3)->get();
+        });
+
+        // Xác định trang cần điều hướng
+        $view = request()->routeIs('product-grids') ? 'frontend.pages.product-grids' : 'frontend.pages.product-lists';
+
+        return view($view, compact('products', 'recent_products'));
+    }
+
+
+    public function productSubCat(Request $request)
+    {
+        $products = Category::getProductBySubCat($request->sub_slug);
+        $recent_products = Cache::remember('recent_products', 30, function () {
+            return Product::active()->latest()->limit(3)->get();
+        });
+
+        // Kiểm tra nếu không có sản phẩm từ danh mục con để tránh lỗi
+        $productList = $products ? $products->sub_products : collect([]);
+
+        // Xác định trang cần điều hướng
+        $view = request()->routeIs('product-grids') ? 'frontend.pages.product-grids' : 'frontend.pages.product-lists';
+
+        return view($view, compact('productList', 'recent_products'));
     }
 
 
@@ -252,7 +331,10 @@ class FrontendController extends Controller
             return back();
         }
     }
-
+    // Reset password
+    public function showResetForm(){
+        return view('auth.passwords.old-reset');
+    }
     public function create(array $data){
         return User::create([
             'name' => $data['name'],
@@ -262,55 +344,5 @@ class FrontendController extends Controller
         ]);
     }
 
-    // Reset password
-    public function showResetForm(){
-        return view('auth.passwords.old-reset');
-    }
-
-    public function subscribe(Request $request){
-        if(! Newsletter::isSubscribed($request->email)){
-                Newsletter::subscribePending($request->email);
-                if(Newsletter::lastActionSucceeded()){
-                    request()->session()->flash('success','Đã đăng ký! Vui lòng kiểm tra email của bạn');
-                    return redirect()->route('home');
-                }
-                else{
-                    Newsletter::getLastError();
-                    return back()->with('error','Có gì đó không ổn! Vui lòng thử lại');
-                }
-            }
-            else{
-                request()->session()->flash('error','Đã đăng ký');
-                return back();
-            }
-    }
-
-    public function bookingdoctor()
-    {
-        // Lấy danh sách bác sĩ từ database
-        $doctors = Doctor::all();
-
-        // Render view và truyền danh sách bác sĩ
-        return view('frontend.pages.bookdoctor', compact('doctors'));
-    }
-
-    public function submitbookdoctor(Request $request)
-    {
-        // Xử lý lưu thông tin đặt khám
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|digits:10',
-            'date' => 'required|date',
-            'time' => 'required',
-            'doctor_id' => 'required|exists:doctorID',
-            'consultation_type' => 'required|in:Online,In-Person',
-            'note' => 'nullable|string|max:500',
-        ]);
-
-        // Thêm logic lưu dữ liệu vào database
-        Booking::create($validated);
-
-        return redirect()->route('bookdoctor')->with('success', 'Đặt khám thành công!');
-    }
 
 }

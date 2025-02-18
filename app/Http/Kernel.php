@@ -22,6 +22,7 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \Fruitcake\Cors\HandleCors::class,
+
     ];
 
     /**
@@ -68,6 +69,6 @@ class Kernel extends HttpKernel
         'user'=> \App\Http\Middleware\User::class,
         'doctor'=> \App\Http\Middleware\Doctor::class,
         'verify.csrf.ajax' => \App\Http\Middleware\VerifyCsrfTokenForAjax::class,
-        
+        'checkDoctorRef' => \App\Http\Middleware\CheckDoctorRef::class,
     ];
 }
