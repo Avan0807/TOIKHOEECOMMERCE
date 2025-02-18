@@ -1,0 +1,528 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HEADER----------------------------------------- */
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styling */
+body {
+    font-family: Arial, sans-serif;
+}
+
+/* Top bar styles */
+.top-bar {
+    background-color: #00b5e2; /* Blue background */
+    padding: 10px 0;
+    color: white;
+    text-align: center;
+}
+
+.top-bar .contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.top-bar .contact-info a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Main header styles */
+.main-header {
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-top: 5px solid #00b5e2; /* Blue border */
+}
+
+/* Logo styles */
+.logo img {
+    height: 50px;
+}
+
+/* Navigation styles */
+nav ul {
+    display: flex;
+    gap: 20px;
+}
+
+nav ul li {
+    list-style: none;
+}
+
+nav ul li a {
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+nav ul li a:hover {
+    color: #00b5e2;
+}
+
+/* Quote button styles */
+.quote-btn a {
+    background-color: #00b5e2;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.quote-btn a:hover {
+    background-color: #008eae;
+}
+
+/* Reset CSS */
+body,
+h1,
+h2,
+h3,
+p,
+ul,
+li,
+div,
+section,
+header,
+footer,
+form,
+input,
+textarea,
+button {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Header */
+header {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Hero Section */
+/* .hero {
+    background: #f4f4f4;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+.hero .banner-left {
+    flex: 2;
+    background: url("../../files/1/bgc.png") no-repeat center center/cover;
+    height: 400px;
+    margin: 5px;
+} */
+
+/* .hero .banner-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 5px 10px 10px;
+}
+
+.hero .banner-right .banner-top {
+    background: url("../../files/1/bgc.png") no-repeat center center/cover;
+    height: 195px;
+}
+
+.hero .banner-right .banner-bottom {
+    background: url("../../files/1/bgc.png") no-repeat center center/cover;
+    height: 195px;
+} */
+
+.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch; /* Đảm bảo các phần tử có chiều cao bằng nhau */
+    gap: 10px; /* Khoảng cách giữa các cột */
+}
+
+.hero .banner-left {
+    flex: 3;
+    background: url("../../files/1/bgc.png") no-repeat center center/cover;
+    height: 400px;
+}
+
+.hero .banner-right {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hero .banner-right .banner-top,
+.hero .banner-right .banner-bottom {
+    background: url("../../files/1/bgc.png") no-repeat center center/cover;
+    flex: 1; /* Đảm bảo các phần tử con trong banner-right chia đều chiều cao */
+}
+
+.hero li {
+    list-style: none;
+}
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.hero .button {
+    margin-top: 20px;
+}
+.hero .cta-button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.hero .cta-button:hover {
+    background-color: #218838;
+}
+
+.splide {
+    margin-top: 20px;
+    height: 380px;
+    background-color: #0d6d96;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#secondary-slider {
+    margin-top: 20px;
+    height: 380px;
+    background-color: #d8d6d6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.splide__slide img {
+    width: 380px;
+    height: 250px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Services Section */
+.services {
+    padding: 50px 20px;
+    text-align: center;
+}
+
+.services h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+}
+
+.service-cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.service {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.service h3 {
+    font-size: 1.5rem;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.service p {
+    font-size: 1rem;
+    color: #555;
+}
+
+/* What We Do Section */
+.what-we-do {
+    background-color: #e9ecef;
+    padding: 50px 20px;
+    text-align: center;
+}
+
+.what-we-do h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+    font-size: 1.5rem;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.card p {
+    font-size: 1rem;
+    color: #555;
+}
+
+/* Form Section */
+.form-section {
+    padding: 50px 20px;
+    text-align: center;
+}
+
+.form-section h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+form input,
+form textarea {
+    width: 80%;
+    max-width: 500px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+form button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #0056b3;
+}
+
+/* Footer */
+.footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px;
+}
+
+.product-section {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+.left-column {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.right-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.product-card {
+    background: #fff;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.product-card img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.product-card button {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.categories ul {
+    list-style: none;
+    padding: 0;
+}
+
+.categories ul li {
+    margin-bottom: 10px;
+}
+
+.categories ul li a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+.newest-product img {
+    width: 100%;
+    border-radius: 5px;
+}
+
+.blog-section {
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+.blog-section h2 {
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.blog-container {
+    display: flex;
+    gap: 20px;
+}
+
+.newest-blog {
+    flex: 3;
+    background: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.newest-blog img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.newest-blog h3 {
+    margin: 10px 0;
+    font-size: 1.2rem;
+}
+
+.newest-blog p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.newest-blog .read-more {
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+.other-blogs {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.blog-card {
+    background: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.blog-card h4 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.blog-card p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.blog-card a {
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.small-banner {
+    height: 200px;
+    border: 1px solid black;
+}
