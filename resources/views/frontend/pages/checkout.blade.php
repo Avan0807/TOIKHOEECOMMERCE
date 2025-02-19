@@ -596,11 +596,11 @@
             // Kiểm tra khi form được submit
             $('button[type="submit"]').click(function(e) {
                 let shippingMethod = $('select[name="shipping"]').val();
-                
+
                 // Nếu không chọn phương thức vận chuyển, hiển thị cảnh báo
                 if (!shippingMethod) {
                     e.preventDefault(); // Ngăn không cho form submit
-                    
+
                     // Hiển thị thông báo lỗi
                     if ($('#shippingAlert').length === 0) {
                         $('.shipping').append('<p id="shippingAlert" style="color: red; margin-top: 5px;">Vui lòng chọn phương thức vận chuyển.</p>');
@@ -656,5 +656,5 @@
             });
         });
     </script>
-    
+
 @endpush

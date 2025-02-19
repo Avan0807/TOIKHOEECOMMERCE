@@ -20,44 +20,42 @@ class FrontendController extends Controller
 
 
     public function home(){
-        // Cache danh mục trong 60 phút
-        $category = Cache::remember('categories_parent', 60, function () {
-            return Category::where('status', 'active')->where('is_parent', 1)->orderBy('title', 'ASC')->get();
-        });
+        // Truy vấn danh mục
+        $category = Category::where('status', 'active')
+            ->where('is_parent', 1)
+            ->orderBy('title', 'ASC')
+            ->get();
 
-        // Cache sản phẩm nổi bật trong 30 phút
-        $featured = Cache::remember('featured_products', 30, function () {
-            return Product::where('status', 'active')
-                ->where('is_featured', 1)
-                ->orderBy('price', 'DESC')
-                ->limit(2)
-                ->get();
-        });
+        // Truy vấn sản phẩm nổi bật
+        $featured = Product::with('cat_info', 'brand') // Sửa 'category' thành 'cat_info'
+            ->where('status', 'active')
+            ->where('is_featured', 1)
+            ->orderBy('price', 'DESC')
+            ->limit(2)
+            ->get();
 
-        // Cache sản phẩm mới nhất trong 30 phút
-        $products = Cache::remember('latest_products', 30, function () {
-            return Product::where('status', 'active')
-                ->orderBy('id', 'DESC')
-                ->limit(8)
-                ->get();
-        });
+        // Truy vấn sản phẩm mới nhất
+        $products = Product::with('cat_info', 'brand', 'getReview') // Sửa 'category' thành 'cat_info'
+            ->where('status', 'active')
+            ->orderBy('id', 'DESC')
+            ->limit(8)
+            ->get();
 
-        // Cache banner trong 30 phút
-        $banners = Cache::remember('active_banners', 30, function () {
-            return Banner::where('status', 'active')
-                ->orderBy('id', 'DESC')
-                ->limit(3)
-                ->get();
-        });
+        // Truy vấn banner
+        $banners = Banner::where('status', 'active')
+            ->orderBy('id', 'DESC')
+            ->limit(3)
+            ->get();
 
         return view('frontend.index', [
             'featured' => $featured,
             'banners' => $banners,
-            'product_lists' => $products, // Đổi tên biến này
+            'product_lists' => $products,
             'category_lists' => $category
         ]);
-
     }
+
+
 
 
     public function aboutUs(){

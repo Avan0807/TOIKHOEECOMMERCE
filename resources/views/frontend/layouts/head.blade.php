@@ -46,7 +46,7 @@
 <link rel="stylesheet" href="{{asset('frontend/css/reset.css')}}">
 <link rel="stylesheet" href="{{asset('frontend/css/style.css')}}">
 <link rel="stylesheet" href="{{asset('frontend/css/responsive.css')}}">
-<link rel="stylesheet" href="{{asset('frontend/css/listdoctor.css')}}"> 
+<link rel="stylesheet" href="{{asset('frontend/css/listdoctor.css')}}">
 
 <style>
     /* Multilevel dropdown */

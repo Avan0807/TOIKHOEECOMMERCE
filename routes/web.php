@@ -78,6 +78,9 @@ Route::post('product/track/order','OrderController@productTrackOrder')->name('pr
 //Checkoutnow
 Route::get('/checkout-now/{product_id}', 'CartController@checkoutNow')->name('checkout-now')->middleware('user');
 
+
+Route::post('/remove-hash-ref', 'SessionController@removeHashRef');
+
 // ReviewDoctor
  Route::resource('doctor-review', 'DoctorReviewController');
  Route::post('/doctor/{doctorID}/review', 'DoctorReviewController@store')->name('doctor.review.store');

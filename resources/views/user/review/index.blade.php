@@ -5,7 +5,7 @@
  <div class="card shadow mb-4">
      <div class="row">
          <div class="col-md-12">
-            @include('backend.layouts.notification')
+
          </div>
      </div>
     <div class="card-header py-3">
@@ -64,7 +64,7 @@
                               <button class="btn btn-danger btn-sm dltBtn" data-id={{$review->id}} style="height:30px; width:30px;border-radius:50%" data-toggle="tooltip" data-placement="bottom" title="Delete"><i class="fas fa-trash-alt"></i></button>
                         </form>
                     </td>
-                    
+
                 </tr>
                 @php
                 $counter++;

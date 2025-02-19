@@ -46,7 +46,6 @@ class OrderController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-
      public function store(Request $request): RedirectResponse
      {
          // ✅ Validate dữ liệu đầu vào
@@ -59,7 +58,7 @@ class OrderController extends Controller
              'phone'      => 'numeric|required',
              'post_code'  => 'string|nullable',
              'email'      => 'string|required',
-             'doctor_id'  => 'nullable|exists:doctors,id' // ✅ Đảm bảo doctor_id hợp lệ nếu có
+             // No need to validate doctor_id since we will get it from hash_ref
          ]);
 
          // ✅ Kiểm tra giỏ hàng
@@ -70,11 +69,6 @@ class OrderController extends Controller
 
          // ✅ Lấy toàn bộ dữ liệu từ request
          $order_data = $request->all();
-
-         // ✅ Nếu không có doctor_id, loại bỏ nó khỏi dữ liệu insert
-         if (!$request->filled('doctor_id')) {
-             unset($order_data['doctor_id']);
-         }
 
          // ✅ Tạo order
          $order_data['order_number'] = 'ORD-' . strtoupper(Str::random(10));
@@ -101,8 +95,7 @@ class OrderController extends Controller
          $order_data['payment_method'] = $request->payment_method ?? 'cod';
          $order_data['payment_status'] = in_array($request->payment_method, ['paypal', 'cardpay']) ? 'paid' : 'Unpaid';
 
-
-         // ✅ Kiểm tra Query Log trước khi insert
+         // ✅ Tạo đơn hàng
          DB::enableQueryLog();
          $order = Order::create($order_data);
 
@@ -113,48 +106,62 @@ class OrderController extends Controller
              return redirect()->back();
          }
 
-         // ✅ Lấy doctor_id từ session (nếu có)
-         $doctor_id = session('doctor_id');
+        // ✅ Kiểm tra nếu có hash_ref trong session, từ đó lấy doctor_id từ affiliate_links
+        if (session('hash_ref')) {
+            // Truy vấn bảng affiliate_links dựa trên hash_ref
+            $affiliate = DB::table('affiliate_links')->where('hash_ref', session('hash_ref'))->first();
 
-         // ✅ Nếu có doctor_id, lưu nó vào đơn hàng và tính hoa hồng
-         if ($doctor_id) {
-             $order->doctor_id = $doctor_id;
-             $order->commission = $order->sub_total * 0.10; // 10% hoa hồng cho bác sĩ
-             $order->save();
+            // Kiểm tra nếu có doctor_id hợp lệ từ affiliate_links
+            if ($affiliate && is_numeric($affiliate->doctor_id)) {
+                $doctor_id = (int)$affiliate->doctor_id; // Ép kiểu về BIGINT (số nguyên lớn)
 
-             // ✅ Lưu thông tin vào affiliate_orders
-             AffiliateOrder::create([
-                 'order_id' => $order->id,
-                 'doctor_id' => $doctor_id,
-                 'commission' => $order->commission,
-                 'status' => 'pending',  // hoặc trạng thái bạn muốn
-                 'created_at' => now(),
-                 'updated_at' => now(),
-             ]);
-         } else {
-             $order->commission = 0;
-             $order->save();
-         }
+                // Gán doctor_id vào order và cập nhật lại
+                $order->doctor_id = $doctor_id;
+                $order->save();  // Lưu lại order với doctor_id
 
-         // ✅ Gửi thông báo khi tạo đơn hàng thành công
-         Notification::send(User::where('role', 'admin')->first(), new StatusNotification([
-             'title' => 'Đơn hàng mới',
-             'actionURL' => route('order.show', $order->id),
-             'fas' => 'fa-file-alt'
-         ]));
+                // Cập nhật doctor_id cho tất cả các cart items liên quan đến order
+                Cart::where('order_id', $order->id)->update(['doctor_id' => $doctor_id]);
 
-         // ✅ Xóa session giỏ hàng
-         session()->forget(['cart', 'coupon']);
+                // Tính hoa hồng cho bác sĩ
+                $order->commission = $order->sub_total * 0.10; // 10% hoa hồng cho bác sĩ
+                $order->save();
 
-         // ✅ Cập nhật giỏ hàng với order_id
-         Cart::where('user_id', auth()->id())->whereNull('order_id')->update(['order_id' => $order->id]);
+                // Lưu thông tin vào affiliate_orders
+                AffiliateOrder::create([
+                    'order_id' => $order->id,
+                    'doctor_id' => $doctor_id,
+                    'commission' => $order->commission,
+                    'status' => 'new',  // hoặc trạng thái bạn muốn
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                // Nếu không có doctor_id hợp lệ, không tính hoa hồng cho bác sĩ
+                $order->commission = 0;
+                $order->save();
+            }
+        }
 
-         // ✅ Thông báo thành công và chuyển hướng
-         request()->session()->flash('success', 'Đơn hàng của bạn đã được tạo. Cảm ơn bạn đã mua sắm!');
-         return redirect()->route('home');
+        // ✅ Gửi thông báo khi tạo đơn hàng thành công
+        Notification::send(User::where('role', 'admin')->first(), new StatusNotification([
+            'title' => 'Đơn hàng mới',
+            'actionURL' => route('order.show', $order->id),
+            'fas' => 'fa-file-alt'
+        ]));
+
+        // ✅ Xóa session giỏ hàng và coupon
+        session()->forget(['cart', 'coupon']);
+
+        // ✅ Cập nhật giỏ hàng với order_id
+        Cart::where('user_id', auth()->id())->whereNull('order_id')->update(['order_id' => $order->id]);
+
+        // ✅ Xóa hash_ref khỏi session sau khi đơn hàng đã được tạo
+        session()->forget('hash_ref');  // Xóa hash_ref khỏi session
+
+        // ✅ Thông báo thành công và chuyển hướng
+        request()->session()->flash('success', 'Đơn hàng của bạn đã được tạo. Cảm ơn bạn đã mua sắm!');
+        return redirect()->route('home');
      }
-
-
 
     /**
      * Hiển thị chi tiết đơn hàng (phía admin).
