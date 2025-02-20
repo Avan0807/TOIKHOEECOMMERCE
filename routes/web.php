@@ -33,10 +33,6 @@ Route::get('login/{provider}/callback/', 'Auth\LoginController@Callback')->name(
 
 Route::get('/','FrontendController@home')->name('home');
 
-//bookdoctor
-Route::get('/bookdoctor', 'FrontendController@bookingdoctor')->name('bookdoctor');
-Route::post('/submitbookdoctor', 'FrontendController@submitbookdoctor')->name('bookdoctor.submit');
-
 // Frontend Routes
 Route::get('/home', 'FrontendController@index');
 Route::get('/about-us','FrontendController@aboutUs')->name('about-us');

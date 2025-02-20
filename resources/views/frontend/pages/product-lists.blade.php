@@ -22,6 +22,7 @@
 		<!-- End Breadcrumbs -->
 		<form action="{{route('shop.filter')}}" method="POST">
 		@csrf
+
 			<!-- Product Style 1 -->
 			<section class="product-area shop-sidebar shop-list shop section">
 				<div class="container">
@@ -31,34 +32,30 @@
                                 <!-- Single Widget -->
                                 <div class="single-widget category">
                                     <h3 class="title">Thể loại</h3>
-                                    <ul class="categor-list">
-										@php
-											// $category = new Category();
-											$menu=App\Models\Category::getAllParentWithChild();
-										@endphp
-										@if($menu)
-										<li>
-											@foreach($menu as $cat_info)
-													@if($cat_info->child_cat->count()>0)
-														<li><a href="{{route('product-cat',$cat_info->slug)}}">{{$cat_info->title}}</a>
-															<ul>
-																@foreach($cat_info->child_cat as $sub_menu)
-																	<li><a href="{{route('product-sub-cat',[$cat_info->slug,$sub_menu->slug])}}">{{$sub_menu->title}}</a></li>
-																@endforeach
-															</ul>
-														</li>
-													@else
-														<li><a href="{{route('product-cat',$cat_info->slug)}}">{{$cat_info->title}}</a></li>
-													@endif
+									<ul class="categor-list">
+										@if(isset($categories) && count($categories) > 0)
+											@foreach($categories as $cat_info)
+												@if($cat_info->child_cat && $cat_info->child_cat->count() > 0)
+													<li>
+														<a href="{{ route('product-cat', ['slug' => $cat_info->slug]) }}">{{ $cat_info->title }}</a>
+														<ul>
+															@foreach($cat_info->child_cat as $sub_menu)
+																<li>
+																	<a href="{{ route('product-sub-cat', ['slug' => $cat_info->slug, 'sub_slug' => $sub_menu->slug]) }}">
+																		{{ $sub_menu->title }}
+																	</a>
+																</li>
+															@endforeach
+														</ul>
+													</li>
+												@else
+													<li>
+														<a href="{{ route('product-cat', ['slug' => $cat_info->slug]) }}">{{ $cat_info->title }}</a>
+													</li>
+												@endif
 											@endforeach
-										</li>
 										@endif
-                                        {{-- @foreach(Helper::productCategoryList('products') as $cat)
-                                            @if($cat->is_parent==1)
-												<li><a href="{{route('product-cat',$cat->slug)}}">{{$cat->title}}</a></li>
-											@endif
-                                        @endforeach --}}
-                                    </ul>
+									</ul>
                                 </div>
                                 <!--/ End Single Widget -->
                                 <!-- Shop By Price -->
@@ -66,16 +63,8 @@
 									<h3 class="title">Mua sắm theo giá</h3>
 									<div class="price-filter">
 										<div class="price-filter-inner">
-											{{-- <div id="slider-range" data-min="10" data-max="2000" data-currency="%"></div>
-												<div class="price_slider_amount">
-												<div class="label-input">
-													<span>Range:</span>
-													<input type="text" id="amount" name="price_range" value='@if(!empty($_GET['price'])) {{$_GET['price']}} @endif' placeholder="Add Your Price"/>
-												</div>
-											</div> --}}
 											@php
 												$max=DB::table('products')->max('price');
-												// dd($max);
 											@endphp
 											<div id="slider-range" data-min="0" data-max="{{$max}}"></div>
 											<div class="product_filter">
@@ -88,17 +77,6 @@
 											</div>
 										</div>
 									</div>
-									{{-- <ul class="check-box-list">
-										<li>
-											<label class="checkbox-inline" for="1"><input name="news" id="1" type="checkbox">$20 - $50<span class="count">(3)</span></label>
-										</li>
-										<li>
-											<label class="checkbox-inline" for="2"><input name="news" id="2" type="checkbox">$50 - $100<span class="count">(5)</span></label>
-										</li>
-										<li>
-											<label class="checkbox-inline" for="3"><input name="news" id="3" type="checkbox">$100 - $250<span class="count">(8)</span></label>
-										</li>
-									</ul> --}}
 								</div>
 								<!--/ End Shop By Price -->
                                 <!-- Single Widget -->
@@ -190,21 +168,21 @@
 												<div class="col-lg-4 col-md-6 col-sm-6">
 													<div class="single-product">
 														<div class="product-img">
-															<a href="{{route('product-detail',$product->slug)}}">
-															@php 
-																$photo=explode(',',$product->photo);
-															@endphp
-															<img class="default-img" src="{{$photo[0]}}" alt="{{$photo[0]}}">
-															<img class="hover-img" src="{{$photo[0]}}" alt="{{$photo[0]}}">
+															<a href="{{ route('product-detail', $product->slug) }}">
+																@php 
+																	$photo = explode(',', $product->photo);
+																@endphp
+																<img class="default-img" src="{{ $photo[0] }}" alt="{{ $photo[0] }}">
+																<img class="hover-img" src="{{ $photo[0] }}" alt="{{ $photo[0] }}">
 															</a>
 															<div class="button-head">
 																<div class="product-action">
 																	<a data-toggle="modal" data-target="#{{$product->id}}" title="Quick View" href="#"><i class=" ti-eye"></i><span>Mua sắm nhanh</span></a>
-																	<a title="Wishlist" href="{{route('add-to-wishlist',$product->slug)}}" class="wishlist" data-id="{{$product->id}}"><i class=" ti-heart "></i><span>Thêm vào danh sách mong muốn</span></a>
-																	<a title="Mua ngay" href="{{route('checkout-now', ['product_id' => $product->id])}}"><i class="ti-shopping-cart"></i><span>Mua ngay</span></a>
+																	<a title="Wishlist" href="{{ route('add-to-wishlist', $product->slug) }}" class="wishlist" data-id="{{ $product->id }}"><i class=" ti-heart "></i><span>Thêm vào danh sách mong muốn</span></a>
+																	<a title="Mua ngay" href="{{ route('checkout-now', ['product_id' => $product->id]) }}"><i class="ti-shopping-cart"></i><span>Mua ngay</span></a>
 																</div>
 																<div class="product-action-2">
-																	<a title="Add to cart" href="{{route('add-to-cart',$product->slug)}}">Thêm vào giỏ hàng</a>
+																	<a title="Add to cart" href="{{ route('add-to-cart', $product->slug) }}">Thêm vào giỏ hàng</a>
 																</div>
 															</div>
 														</div>
@@ -215,16 +193,15 @@
 														<div class="product-content">
 															<div class="product-price">
 																@php
-																	$after_discount=($product->price-($product->price*$product->discount)/100);
+																	$after_discount = ($product->price - ($product->price * $product->discount) / 100);
 																@endphp
-																<span>{{number_format($after_discount,0,',','.')}} đ</span>
-																<del>{{number_format($product->price,0,',','.')}} đ</del>
+																<span>{{ number_format($after_discount, 0, ',', '.') }} đ</span>
+																<del>{{ number_format($product->price, 0, ',', '.') }} đ</del>
 															</div>
-															<h3 class="title"><a href="{{route('product-detail',$product->slug)}}">{{$product->title}}</a></h3>
-														{{-- <p>{!! html_entity_decode($product->summary) !!}</p> --}}
+															<h3 class="title"><a href="{{ route('product-detail', $product->slug) }}">{{ $product->title }}</a></h3>
+															<p class="des pt-2">{!! html_entity_decode($product->summary) !!}</p>
+															<a href="{{ route('checkout-now', ['product_id' => $product->id]) }}" class="btn btn-primary">Mua ngay</a>
 														</div>
-														<p class="des pt-2">{!! html_entity_decode($product->summary) !!}</p>
-														<a href="{{ route('checkout-now', ['product_id' => $product->id]) }}" class="btn btn-primary">Mua ngay</a>
 													</div>
 												</div>
 											</div>
@@ -245,6 +222,7 @@
 				</div>
 			</section>
 			<!--/ End Product Style 1  -->	
+
 		</form>
 		<!-- Modal -->
 		@if($products)

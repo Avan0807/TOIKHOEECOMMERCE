@@ -32,32 +32,18 @@
                                 <div class="single-widget category">
                                     <h3 class="title">Thể loại</h3>
                                     <ul class="categor-list">
-										@php
-											// $category = new Category();
-											$menu=App\Models\Category::getAllParentWithChild();
-										@endphp
-										@if($menu)
-										<li>
-											@foreach($menu as $cat_info)
-													@if($cat_info->child_cat->count()>0)
-														<li><a href="{{route('product-cat',$cat_info->slug)}}">{{$cat_info->title}}</a>
-															<ul>
-																@foreach($cat_info->child_cat as $sub_menu)
-																	<li><a href="{{route('product-sub-cat',[$cat_info->slug,$sub_menu->slug])}}">{{$sub_menu->title}}</a></li>
-																@endforeach
-															</ul>
-														</li>
-													@else
-														<li><a href="{{route('product-cat',$cat_info->slug)}}">{{$cat_info->title}}</a></li>
-													@endif
-											@endforeach
-										</li>
-										@endif
-                                        {{-- @foreach(Helper::productCategoryList('products') as $cat)
-                                            @if($cat->is_parent==1)
-												<li><a href="{{route('product-cat',$cat->slug)}}">{{$cat->title}}</a></li>
-											@endif
-                                        @endforeach --}}
+                                        @foreach($menu as $cat_info)
+                                            <li>
+                                                <a href="{{ route('product-cat', $cat_info->slug) }}">{{ $cat_info->title }}</a>
+                                                @if($cat_info->child_cat->isNotEmpty())
+                                                    <ul>
+                                                        @foreach($cat_info->child_cat as $sub_menu)
+                                                            <li><a href="{{ route('product-sub-cat', [$cat_info->slug, $sub_menu->slug]) }}">{{ $sub_menu->title }}</a></li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </li>
+                                        @endforeach
                                     </ul>
                                 </div>
                                 <!--/ End Single Widget -->
@@ -217,132 +203,127 @@
 
     <!--/ End Product Style 1  -->
 
-
-
     <!-- Modal -->
     @if($products)
-        @foreach($products as $key=>$product)
-            <div class="modal fade" id="{{$product->id}}" tabindex="-1" role="dialog">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span class="ti-close" aria-hidden="true"></span></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row no-gutters">
-                                    <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-                                        <!-- Product Slider -->
-                                            <div class="product-gallery">
-                                                <div class="quickview-slider-active">
-                                                    @php
-                                                        $photo=explode(',',$product->photo);
-                                                    // dd($photo);
-                                                    @endphp
-                                                    @foreach($photo as $data)
-                                                        <div class="single-slider">
-                                                            <img src="{{$data}}" alt="{{$data}}">
-                                                        </div>
-                                                    @endforeach
-                                                </div>
+    @foreach($products as $product)
+        <div class="modal fade" id="{{$product->id}}" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span class="ti-close" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row no-gutters">
+                            <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
+                                <div class="product-gallery">
+                                    <div class="quickview-slider-active">
+                                        @php
+                                            $photo = explode(',', $product->photo);
+                                        @endphp
+                                        @foreach($photo as $data)
+                                            <div class="single-slider">
+                                                <img src="{{$data}}" alt="{{$data}}">
                                             </div>
-                                        <!-- End Product slider -->
+                                        @endforeach
                                     </div>
-                                    <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-                                        <div class="quickview-content">
-                                            <h2>{{$product->title}}</h2>
-                                            <div class="quickview-ratting-review">
-                                                <div class="quickview-ratting-wrap">
-                                                    <div class="quickview-ratting">
-                                                        @php
-                                                            $rate=DB::table('product_reviews')->where('product_id',$product->id)->avg('rate');
-                                                            $rate_count=DB::table('product_reviews')->where('product_id',$product->id)->count();
-                                                        @endphp
-                                                        @for($i=1; $i<=5; $i++)
-                                                            @if($rate>=$i)
-                                                                <i class="yellow fa fa-star"></i>
-                                                            @else
-                                                            <i class="fa fa-star"></i>
-                                                            @endif
-                                                        @endfor
-                                                    </div>
-                                                    <a href="#"> ({{$rate_count}} đánh giá của khách hàng)</a>
-                                                </div>
-                                                <div class="quickview-stock">
-                                                    @if($product->stock >0)
-                                                    <span><i class="fa fa-check-circle-o"></i> {{$product->stock}} trong kho</span>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
+                                <div class="quickview-content">
+                                    <h2>{{$product->title}}</h2>
+                                    <div class="quickview-ratting-review">
+                                        <div class="quickview-ratting-wrap">
+                                            <div class="quickview-ratting">
+                                                @php
+                                                    $rate = $product->getReview->avg('rate');
+                                                    $rate_count = $product->getReview->count();
+                                                @endphp
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    @if($rate >= $i)
+                                                        <i class="yellow fa fa-star"></i>
                                                     @else
-                                                    <span><i class="fa fa-times-circle-o text-danger"></i> {{$product->stock}} hết hàng</span>
+                                                        <i class="fa fa-star"></i>
                                                     @endif
-                                                </div>
+                                                @endfor
                                             </div>
-                                            @php
-                                                $after_discount=($product->price-($product->price*$product->discount)/100);
-                                            @endphp
-                                            <h3><small><del class="text-muted">{{number_format($product->price,0,',','.')}} đ</del></small>{{number_format($after_discount,0,',','.')}} đ </h3>
-                                            <div class="quickview-peragraph">
-                                                <p>{!! html_entity_decode($product->summary) !!}</p>
-                                            </div>
-                                            <div class="size">
-                                                <div class="row">
-                                                    <div class="col-lg-6 col-12">
-                                                        <h3 class="title">Loại</h3>
-                                                        <select>
-                                                            @php
-                                                            $sizes=explode(',',$product->size);
-                                                            // dd($sizes);
-                                                            @endphp
-                                                            @foreach($sizes as $size)
-                                                                <option>{{$size}}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <form action="{{route('single-add-to-cart')}}" method="POST">
-                                                @csrf
-                                                <div class="quantity">
-                                                    <!-- Input Order -->
-                                                    <div class="input-group">
-                                                        <div class="button minus">
-                                                            <button type="button" class="btn btn-primary btn-number" disabled="disabled" data-type="minus" data-field="quant[1]">
-                                                                <i class="ti-minus"></i>
-                                                            </button>
-                                                        </div>
-                                                        <input type="hidden" name="slug" value="{{$product->slug}}">
-                                                        <input type="text" name="quant[1]" class="input-number"  data-min="1" data-max="1000" value="1">
-                                                        <div class="button plus">
-                                                            <button type="button" class="btn btn-primary btn-number" data-type="plus" data-field="quant[1]">
-                                                                <i class="ti-plus"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <!--/ End Input Order -->
-                                                </div>
-                                                <div class="add-to-cart">
-                                                    <button type="submit" class="btn">Thêm vào giỏ hàng</button>
-
-                                                    <a href="{{ route('checkout-now', ['product_id' => $product->id]) }}" class="btn btn-primary">
-                                                        Mua ngay
-                                                    </a>
-
-                                                    <a href="{{ route('add-to-wishlist', $product->slug) }}" class="btn min">
-                                                        <i class="ti-heart"></i>
-                                                    </a>
-                                                </div>
-
-                                            </form>
-                                            <div class="default-social">
-                                            <!-- ShareThis BEGIN --><div class="sharethis-inline-share-buttons"></div><!-- ShareThis END -->
+                                            <a href="#"> ({{$rate_count}} đánh giá của khách hàng)</a>
+                                        </div>
+                                        <div class="quickview-stock">
+                                            @if($product->stock > 0)
+                                                <span><i class="fa fa-check-circle-o"></i> {{$product->stock}} trong kho</span>
+                                            @else
+                                                <span><i class="fa fa-times-circle-o text-danger"></i> Hết hàng</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @php
+                                        $after_discount = ($product->price - ($product->price * $product->discount) / 100);
+                                    @endphp
+                                    <h3><small><del class="text-muted">{{number_format($product->price, 0, ',', '.')}} đ</del></small> {{number_format($after_discount, 0, ',', '.')}} đ </h3>
+                                    <div class="quickview-peragraph">
+                                        <p>{!! html_entity_decode($product->summary) !!}</p>
+                                    </div>
+                                    <div class="size">
+                                        <div class="row">
+                                            <div class="col-lg-6 col-12">
+                                                <h3 class="title">Loại</h3>
+                                                <select>
+                                                    @php
+                                                    $sizes = explode(',', $product->size);
+                                                    @endphp
+                                                    @foreach($sizes as $size)
+                                                        <option>{{$size}}</option>
+                                                    @endforeach
+                                                </select>
                                             </div>
                                         </div>
+                                    </div>
+                                    <form action="{{route('single-add-to-cart')}}" method="POST">
+                                        @csrf
+                                        <div class="quantity">
+                                            <div class="input-group">
+                                                <div class="button minus">
+                                                    <button type="button" class="btn btn-primary btn-number" disabled="disabled" data-type="minus" data-field="quant[1]">
+                                                        <i class="ti-minus"></i>
+                                                    </button>
+                                                </div>
+                                                <input type="hidden" name="slug" value="{{$product->slug}}">
+                                                <input type="text" name="quant[1]" class="input-number"  data-min="1" data-max="1000" value="1">
+                                                <div class="button plus">
+                                                    <button type="button" class="btn btn-primary btn-number" data-type="plus" data-field="quant[1]">
+                                                        <i class="ti-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="add-to-cart">
+                                            <button type="submit" class="btn">Thêm vào giỏ hàng</button>
+
+                                            <a href="{{ route('checkout-now', ['product_id' => $product->id]) }}" class="btn btn-primary">
+                                                Mua ngay
+                                            </a>
+
+                                            <a href="{{ route('add-to-wishlist', $product->slug) }}" class="btn min">
+                                                <i class="ti-heart"></i>
+                                            </a>
+                                        </div>
+
+                                    </form>
+                                    <div class="default-social">
+                                    <!-- ShareThis BEGIN --><div class="sharethis-inline-share-buttons"></div><!-- ShareThis END -->
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
             </div>
-        @endforeach
-    @endif
+        </div>
+    @endforeach
+@endif
+
     <!-- Modal end -->
 
 @endsection
