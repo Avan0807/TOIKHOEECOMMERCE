@@ -3,7 +3,7 @@
 @section('main-content')
 <!-- Slider Area         -->
     @if(count($banners)>0)
-        <section id="Gslider" class="carousel slide" data-ride="carousel">
+        <section id="Gslider" class="carousel slide" data-ride="carousel" data-interval="3000">
             <ol class="carousel-indicators">
                 @foreach($banners as $key=>$banner)
             <li data-target="#Gslider" data-slide-to="{{$key}}" class="{{(($key==0)? 'active' : '')}}"></li>
@@ -30,7 +30,7 @@
             <span class="carousel-control-next-icon" aria-hidden="true"></span>
             <span class="sr-only">Sau</span>
             </a>
-        </section>
+        </sect>
     @endif
 <!--/ End Slider Area -->
 
