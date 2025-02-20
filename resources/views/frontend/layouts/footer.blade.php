@@ -156,6 +156,7 @@
 <style>
     .footer img {
         max-width: 200px; /* Điều chỉnh kích thước ảnh */
+		border-radius: 50%;
         height: auto;
         display: block;
         margin: 0 auto;

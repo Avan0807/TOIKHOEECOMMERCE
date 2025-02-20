@@ -51,7 +51,7 @@ class FrontendController extends Controller
         // ✅ Truy vấn sản phẩm mới nhất
         $product_lists = Product::where('status', 'active')
             ->orderBy('id', 'DESC')
-            ->limit(8)
+            ->limit(6)
             ->get();
     
         // ✅ Truy vấn tất cả rating cùng lúc

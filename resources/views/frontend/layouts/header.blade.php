@@ -223,7 +223,10 @@
 
 <style>
     .header .logo img {
-        max-width: 120px;
+
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
         height: auto;
         display: block;
         margin: 0 auto;
