@@ -11,15 +11,20 @@
 
             </ol>
             <div class="carousel-inner" role="listbox">
-                    @foreach($banners as $key=>$banner)
-                    <div class="carousel-item {{(($key==0)? 'active' : '')}}">
-                        <img class="first-slide" src="{{$banner->photo}}" alt="First slide">
-                        <div class="carousel-caption d-none d-md-block text-left">
-                            <h1 class="wow fadeInDown">{{$banner->title}}</h1>
-                            <p>{!! html_entity_decode($banner->description) !!}</p>
-                            <a class="btn btn-lg ws-btn wow fadeInUpBig" href="{{route('product-grids')}}" role="button">Mua ngay<i class="far fa-arrow-alt-circle-right"></i></i></a>
-                        </div>
+                @foreach($banners as $key => $banner)
+                <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                    <picture>
+                        <source srcset="{{ str_replace('.jpg', '.webp', $banner->photo) }}" type="image/webp">
+                        <img class="first-slide lazy" data-src="{{$banner->photo}}" alt="First slide" loading="{{ $key == 0 ? 'eager' : 'lazy' }}">
+                    </picture>
+                    <div class="carousel-caption d-none d-md-block text-left">
+                        <h1 class="wow fadeInDown">{{ $banner->title }}</h1>
+                        <p>{!! html_entity_decode($banner->description) !!}</p>
+                        <a class="btn btn-lg ws-btn wow fadeInUpBig" href="{{ route('product-grids') }}" role="button">
+                            Mua ngay <i class="far fa-arrow-alt-circle-right"></i>
+                        </a>
                     </div>
+                </div>
                 @endforeach
             </div>
             <a class="carousel-control-prev" href="#Gslider" role="button" data-slide="prev">
@@ -476,45 +481,7 @@
 
 @endsection
 
-@push('styles')
-    <style>
-        /* Banner Sliding */
-        #Gslider .carousel-inner {
-        background: #000000;
-        color:black;
-        }
 
-        #Gslider .carousel-inner{
-        height: 550px;
-        }
-        #Gslider .carousel-inner img{
-            width: 100% !important;
-            opacity: .8;
-        }
-
-        #Gslider .carousel-inner .carousel-caption {
-        bottom: 60%;
-        }
-
-        #Gslider .carousel-inner .carousel-caption h1 {
-        font-size: 50px;
-        font-weight: bold;
-        line-height: 100%;
-        /* color: #F7941D; */
-        color: #1e1e1e;
-        }
-
-        #Gslider .carousel-inner .carousel-caption p {
-        font-size: 18px;
-        color: black;
-        margin: 28px 0 28px 0;
-        }
-
-        #Gslider .carousel-indicators {
-        bottom: 70px;
-        }
-    </style>
-@endpush
 
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
@@ -671,6 +638,23 @@
                 $(this).find('.button-head').css('display', 'block');
             }, function () {
                 $(this).find('.button-head').css('display', 'none');
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function(){
+            $('#Gslider').carousel({
+                interval: 3000, // Chuyển slide sau 3 giây
+                pause: "hover" // Dừng khi hover vào slider
+            });
+
+            // Lazy loading cho carousel
+            $('#Gslider').on('slide.bs.carousel', function (e) {
+                let nextSlide = $(e.relatedTarget).find('img.lazy');
+                if (!nextSlide.attr('src')) {
+                    nextSlide.attr('src', nextSlide.data('src')).removeClass('lazy');
+                }
             });
         });
     </script>

@@ -70,5 +70,6 @@ class Kernel extends HttpKernel
         'doctor'=> \App\Http\Middleware\Doctor::class,
         'verify.csrf.ajax' => \App\Http\Middleware\VerifyCsrfTokenForAjax::class,
         'checkDoctorRef' => \App\Http\Middleware\CheckDoctorRef::class,
+        'optimizeImages' => \Spatie\LaravelImageOptimizer\Middlewares\OptimizeImages::class,
     ];
 }
