@@ -1,6 +1,7 @@
 const mix = require('laravel-mix');
+require('laravel-mix-purgecss'); // Import PurgeCSS
 
-// Kết hợp và nén các tệp CSS
+// Kết hợp, nén và loại bỏ CSS không dùng với PurgeCSS
 mix.styles([
     'public/frontend/css/bootstrap.css',
     'public/frontend/css/magnific-popup.min.css',
@@ -17,9 +18,17 @@ mix.styles([
     'public/frontend/css/style.css',
     'public/frontend/css/responsive.css',
 ], 'public/css/all.css')
-.minify('public/css/all.css');
+.minify('public/css/all.css')
+.purgeCss({
+    content: [
+        'resources/views/**/*.blade.php', // Xóa CSS không dùng từ file Blade
+        'resources/js/**/*.vue', // Nếu dùng VueJS
+        'resources/js/**/*.js' // Nếu có file JS frontend
+    ],
+    safelist: ['active', 'show'], // Giữ lại các class cần thiết để tránh lỗi
+});
 
-// Kết hợp và nén các tệp JavaScript
+// Kết hợp, nén và tối ưu hóa JS
 mix.scripts([
     'public/frontend/js/jquery.min.js',
     'public/frontend/js/jquery-migrate-3.0.0.js',
@@ -41,5 +50,8 @@ mix.scripts([
 ], 'public/js/all.js')
 .minify('public/js/all.js');
 
-// Sao chép tệp font vào thư mục public/fonts
+// Sao chép font vào thư mục public/fonts
 mix.copy('public/frontend/fonts', 'public/fonts');
+
+// Thêm versioning để cache tốt hơn
+mix.version();
