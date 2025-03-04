@@ -18,10 +18,10 @@ class AffiliateLink extends Model
     protected $fillable = [
         'doctor_id',
         'product_id',
-        'affiliate_code',
-        'hash_ref' // Thêm cột mới
+        'product_link', // ✅ Thêm trường product_link
+        'commission_percentage', // ✅ Thêm trường commission_percentage
+        'hash_ref' // ✅ Đã có trong bảng
     ];
-
 
     /**
      * Liên kết với model Doctor
@@ -44,17 +44,16 @@ class AffiliateLink extends Model
      */
     public static function createAffiliateLink($doctorId, $productId)
     {
-        $affiliateCode = 'AFF-' . strtoupper(bin2hex(random_bytes(5))); // Mã gốc
         $hashRef = hash('sha256', $doctorId . $productId . time()); // Mã hash an toàn
 
         return self::create([
             'doctor_id' => $doctorId,
             'product_id' => $productId,
-            'affiliate_code' => $affiliateCode, // Vẫn lưu affiliate_code nếu cần
-            'hash_ref' => $hashRef, // Thêm cột hash_ref
+            'product_link' => url("http://toikhoe.vn/product-detail/{$productId}?ref={$hashRef}"), // ✅ Thêm product_link
+            'commission_percentage' => 0, // ✅ Giá trị mặc định
+            'hash_ref' => $hashRef,
         ]);
     }
-
 
     /**
      * Kiểm tra xem link affiliate có tồn tại không

@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Shipping;
 use App\Models\AffiliateOrder;
+use App\Models\AffiliateLink;
 use App\User;
 use PDF;
 use DB;
@@ -45,123 +46,94 @@ class OrderController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+    public function store(Request $request): RedirectResponse
+    {
+        // ✅ Validate dữ liệu đầu vào
+        $this->validate($request, [
+            'first_name' => 'string|required',
+            'last_name'  => 'string|required',
+            'address1'   => 'string|required',
+            'address2'   => 'string|nullable',
+            'coupon'     => 'nullable|numeric',
+            'phone'      => 'numeric|required',
+            'post_code'  => 'string|nullable',
+            'email'      => 'string|required',
+        ]);
 
-     public function store(Request $request): RedirectResponse
-     {
-         // ✅ Validate dữ liệu đầu vào
-         $this->validate($request, [
-             'first_name' => 'string|required',
-             'last_name'  => 'string|required',
-             'address1'   => 'string|required',
-             'address2'   => 'string|nullable',
-             'coupon'     => 'nullable|numeric',
-             'phone'      => 'numeric|required',
-             'post_code'  => 'string|nullable',
-             'email'      => 'string|required',
-             // No need to validate doctor_id since we will get it from hash_ref
-         ]);
+        // ✅ Kiểm tra giỏ hàng
+        if (Cart::where('user_id', auth()->id())->whereNull('order_id')->doesntExist()) {
+            request()->session()->flash('error', 'Giỏ hàng đang trống!');
+            return redirect()->back();
+        }
 
-         // ✅ Kiểm tra giỏ hàng
-         if (Cart::where('user_id', auth()->id())->whereNull('order_id')->doesntExist()) {
-             request()->session()->flash('error', 'Giỏ hàng đang trống!');
-             return redirect()->back();
-         }
+        // ✅ Lấy toàn bộ dữ liệu từ request
+        $order_data = $request->all();
 
-         // ✅ Lấy toàn bộ dữ liệu từ request
-         $order_data = $request->all();
+        // ✅ Tạo order
+        $order_data['order_number'] = 'ORD-' . strtoupper(Str::random(10));
+        $order_data['user_id'] = auth()->id();
+        $order_data['shipping_id'] = $request->shipping;
+        $order_data['sub_total'] = Helper::totalCartPrice();
+        $order_data['quantity'] = Helper::cartCount();
 
-         // ✅ Tạo order
-         $order_data['order_number'] = 'ORD-' . strtoupper(Str::random(10));
-         $order_data['user_id'] = auth()->id();
-         $order_data['shipping_id'] = $request->shipping;
-         $order_data['sub_total'] = Helper::totalCartPrice();
-         $order_data['quantity'] = Helper::cartCount();
+        // ✅ Tính toán total_amount (bao gồm phí vận chuyển nếu có)
+        if ($request->shipping) {
+            $shipping = Shipping::find($request->shipping);
+            $order_data['total_amount'] = Helper::totalCartPrice() + ($shipping ? $shipping->price : 0);
+        } else {
+            $order_data['total_amount'] = Helper::totalCartPrice();
+        }
 
-         // ✅ Tính toán total_amount (bao gồm phí vận chuyển nếu có)
-         if ($request->shipping) {
-             $shipping = Shipping::find($request->shipping);
-             $order_data['total_amount'] = Helper::totalCartPrice() + ($shipping ? $shipping->price : 0);
-         } else {
-             $order_data['total_amount'] = Helper::totalCartPrice();
-         }
+        // ✅ Áp dụng coupon nếu có
+        if (session('coupon')) {
+            $order_data['coupon'] = session('coupon')['value'];
+            $order_data['total_amount'] -= session('coupon')['value'];
+        }
 
-         // ✅ Áp dụng coupon nếu có
-         if (session('coupon')) {
-             $order_data['coupon'] = session('coupon')['value'];
-             $order_data['total_amount'] -= session('coupon')['value'];
-         }
+        // ✅ Xử lý thanh toán
+        $order_data['payment_method'] = $request->payment_method ?? 'cod';
+        $order_data['payment_status'] = in_array($request->payment_method, ['paypal', 'cardpay']) ? 'paid' : 'Unpaid';
 
-         // ✅ Xử lý thanh toán
-         $order_data['payment_method'] = $request->payment_method ?? 'cod';
-         $order_data['payment_status'] = in_array($request->payment_method, ['paypal', 'cardpay']) ? 'paid' : 'Unpaid';
+        // ✅ Tạo đơn hàng
+        $order = Order::create($order_data);
 
-         // ✅ Tạo đơn hàng
-         DB::enableQueryLog();
-         $order = Order::create($order_data);
-
-         // ✅ Kiểm tra lỗi insert
-         if (!$order) {
-             Log::error('Lỗi khi insert đơn hàng!', $order_data);
-             request()->session()->flash('error', 'Có lỗi xảy ra khi tạo đơn hàng.');
-             return redirect()->back();
-         }
-
-        // ✅ Kiểm tra nếu có hash_ref trong session, từ đó lấy doctor_id từ affiliate_links
+        // ✅ Kiểm tra nếu có hash_ref trong session, áp dụng commission_percentage
         if (session('hash_ref')) {
-            // Truy vấn bảng affiliate_links dựa trên hash_ref
-            $affiliate = DB::table('affiliate_links')->where('hash_ref', session('hash_ref'))->first();
-
-            // Kiểm tra nếu có doctor_id hợp lệ từ affiliate_links
-            if ($affiliate && is_numeric($affiliate->doctor_id)) {
-                $doctor_id = (int)$affiliate->doctor_id; // Ép kiểu về BIGINT (số nguyên lớn)
-
-                // Gán doctor_id vào order và cập nhật lại
+            $affiliate = AffiliateLink::where('hash_ref', session('hash_ref'))->first();
+            if ($affiliate) {
+                $doctor_id = (int)$affiliate->doctor_id;
                 $order->doctor_id = $doctor_id;
-                $order->save();  // Lưu lại order với doctor_id
-
-                // Cập nhật doctor_id cho tất cả các cart items liên quan đến order
-                Cart::where('order_id', $order->id)->update(['doctor_id' => $doctor_id]);
-
-                // Tính hoa hồng cho bác sĩ
-                $order->commission = $order->sub_total * 0.10; // 10% hoa hồng cho bác sĩ
                 $order->save();
 
-                // Lưu thông tin vào affiliate_orders
+                // ✅ Tính hoa hồng theo commission_percentage của sản phẩm
+                $commissionPercentage = $affiliate->commission_percentage;
+                $order->commission = $order->sub_total * ($commissionPercentage / 100);
+                $order->save();
+
+                // ✅ Lưu thông tin vào affiliate_orders
                 AffiliateOrder::create([
                     'order_id' => $order->id,
                     'doctor_id' => $doctor_id,
                     'commission' => $order->commission,
-                    'status' => 'new',  // hoặc trạng thái bạn muốn
+                    'status' => 'new',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            } else {
-                // Nếu không có doctor_id hợp lệ, không tính hoa hồng cho bác sĩ
-                $order->commission = 0;
-                $order->save();
             }
         }
-
-        // ✅ Gửi thông báo khi tạo đơn hàng thành công
-        Notification::send(User::where('role', 'admin')->first(), new StatusNotification([
-            'title' => 'Đơn hàng mới',
-            'actionURL' => route('order.show', $order->id),
-            'fas' => 'fa-file-alt'
-        ]));
-
-        // ✅ Xóa session giỏ hàng và coupon
-        session()->forget(['cart', 'coupon']);
 
         // ✅ Cập nhật giỏ hàng với order_id
         Cart::where('user_id', auth()->id())->whereNull('order_id')->update(['order_id' => $order->id]);
 
         // ✅ Xóa hash_ref khỏi session sau khi đơn hàng đã được tạo
-        session()->forget('hash_ref');  // Xóa hash_ref khỏi session
+        session()->forget('hash_ref');
 
         // ✅ Thông báo thành công và chuyển hướng
         request()->session()->flash('success', 'Đơn hàng của bạn đã được tạo. Cảm ơn bạn đã mua sắm!');
         return redirect()->route('home');
-     }
+    }
+
+
 
     /**
      * Hiển thị chi tiết đơn hàng (phía admin).

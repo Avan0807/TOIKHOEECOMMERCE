@@ -5,7 +5,7 @@
  <div class="card shadow mb-4">
      <div class="row">
          <div class="col-md-12">
-            @include('backend.layouts.notification')
+            @include('frontend.layouts.notification')
          </div>
      </div>
     <div class="card-header py-3">
@@ -26,7 +26,7 @@
               <th>Chức năng</th>
             </tr>
           </thead>
-          
+
           <tbody>
             @foreach($comments as $comment)
                 <tr>

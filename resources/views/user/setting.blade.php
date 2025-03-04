@@ -1,4 +1,4 @@
-@extends('backend.layouts.master')
+@extends('user.layouts.master')
 
 @section('main-content')
 
@@ -6,7 +6,7 @@
     <h5 class="card-header">Chỉnh sửa bài viết</h5>
     <div class="card-body">
     <form method="post" action="{{route('settings.update')}}">
-        @csrf 
+        @csrf
         {{-- @method('PATCH') --}}
         {{-- {{dd($data)}} --}}
         <div class="form-group">
